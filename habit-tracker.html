@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion Habit Database & Vault</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0D1117;
+      color: #F0F6FC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 14px;
+      display: flex;
+      justify-content: center;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    header {
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .btn {
+      background: #21262D;
+      border: 1px solid #30363D;
+      color: #F0F6FC;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #30363D; }
+    .btn-green { background: #238636; border-color: #2ea043; color: #fff; }
+    .btn-green:hover { background: #2ea043; }
+    .btn-blue { background: #1f6feb; border-color: #388bfd; color: #fff; }
+    .btn-danger { background: #da3633; border-color: #f85149; color: #fff; }
+
+    /* Navigation Bar */
+    .tabs {
+      display: flex;
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: #8B949E;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: #388BFD; color: #fff; }
+
+    /* Date Bar & Calendar Picker */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 10px;
+      padding: 8px 12px;
+    }
+    .date-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      position: relative;
+    }
+    .date-picker-wrap input[type="date"] {
+      background: transparent;
+      border: none;
+      color: #58A6FF;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    .date-picker-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
+    /* Cards */
+    .card {
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .score-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .score-label { font-size: 10px; letter-spacing: 1px; color: #8B949E; font-weight: 700; }
+    .score-val { font-size: 26px; font-weight: 900; }
+    .progress-track { height: 8px; background: #0D1117; border-radius: 4px; overflow: hidden; border: 1px solid #30363D; }
+    .progress-fill { height: 100%; background: #388BFD; width: 0%; transition: width 0.3s ease; }
+
+    /* Habit Items */
+    .habit-list { display: flex; flex-direction: column; gap: 8px; }
+    .habit-item {
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .habit-row { display: flex; align-items: center; gap: 10px; }
+    .habit-check { width: 18px; height: 18px; accent-color: #238636; cursor: pointer; }
+    .habit-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .habit-name.done { text-decoration: line-through; color: #8B949E; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      background: #0D1117;
+      border: 1px solid #30363D;
+      color: #8B949E;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tag.active { background: rgba(56, 139, 253, 0.2); border-color: #388BFD; color: #58A6FF; font-weight: 600; }
+    .habit-input {
+      background: #0D1117;
+      border: 1px solid #30363D;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #F0F6FC;
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+    }
+    .habit-input:focus { border-color: #388BFD; }
+
+    /* Journal Reflection Box */
+    .journal-box {
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    /* History & Matrix Table */
+    .table-box { overflow-x: auto; max-height: 480px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid #30363D; white-space: nowrap; }
+    th { color: #8B949E; font-weight: 700; position: sticky; top: 0; background: #161B22; z-index: 2; }
+    .clickable-row { cursor: pointer; transition: background 0.15s; }
+    .clickable-row:hover { background: #21262D; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal-box {
+      background: #161B22; border: 1px solid #30363D; border-radius: 12px;
+      padding: 18px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Top Bar -->
+    <header>
+      <div class="header-title">📋 Notion Habit Database</div>
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-green" onclick="exportObsidianNote()">📥 Obsidian .md</button>
+        <button class="btn" onclick="openBackupModal()">💾 Pendrive Sync</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button id="tabBtnDaily" class="tab-btn active" onclick="setTab('daily')">Daily Tracker</button>
+      <button id="tabBtnStreaks" class="tab-btn" onclick="setTab('streaks')">History & Matrix</button>
+      <button id="tabBtnManage" class="tab-btn" onclick="setTab('manage')">Manage Template</button>
+    </div>
+
+    <!-- TAB 1: DAILY TRACKER VIEW -->
+    <div id="viewDaily" class="tab-content">
+      <!-- Date Bar with HTML5 Calendar Selector -->
+      <div class="date-nav">
+        <button class="btn" onclick="shiftDate(-1)">◀ Prev</button>
+        <div class="date-picker-wrap">
+          <input type="date" id="datePickerInput" onchange="onDateChanged(this.value)">
+          <span id="dayOfWeekLabel" style="font-size: 12px; color: #8B949E; font-weight: 600;"></span>
+        </div>
+        <button class="btn" onclick="shiftDate(1)">Next ▶</button>
+      </div>
+
+      <!-- Daily Score Card -->
+      <div class="card" style="margin-top: 10px;">
+        <div class="score-head">
+          <span class="score-label">DAILY COMPLETION SCORE</span>
+          <span id="scoreText" class="score-val">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Action Row (Habit count & Single-day Add) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+        <span id="habitContextLabel" style="font-size: 12px; font-weight: 700; color: #8B949E;">Active Habits</span>
+        <button class="btn btn-blue" onclick="openHabitEditor(null, true)">+ Add Habit (Today Only)</button>
+      </div>
+
+      <!-- Habit List -->
+      <div style="margin-top: 8px;" class="habit-list" id="dailyHabitsContainer"></div>
+
+      <!-- Daily Reflection / Journaling -->
+      <div class="card" style="margin-top: 12px;">
+        <span class="score-label">DAILY REFLECTION & NOTES</span>
+        <textarea id="reflectionInput" class="habit-input journal-box" style="margin-top: 8px;" placeholder="Write daily wins, workout details, or reflections (auto-saves to Obsidian export)..." oninput="onUpdateReflection(this.value)"></textarea>
+      </div>
+    </div>
+
+    <!-- TAB 2: HISTORY, STREAKS & CLICKABLE MATRIX -->
+    <div id="viewStreaks" class="tab-content hidden">
+      <div class="card">
+        <div class="score-head">
+          <span class="score-label">ACTIVE STREAK</span>
+          <span id="streakDays" class="score-val" style="color: #388BFD;">0 Days</span>
+        </div>
+        <p style="font-size: 11px; color: #8B949E;">Consecutive days with tracked habits completed. Tap any date below to open and edit that log.</p>
+      </div>
+
+      <div class="card table-box" style="margin-top: 12px;">
+        <h4 style="font-size: 12px; margin-bottom: 8px; color: #F0F6FC;">Full Activity Matrix (Click any date to open)</h4>
+        <table id="matrixTable">
+          <thead><tr id="matrixHeader"></tr></thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: MANAGE TEMPLATE HABITS -->
+    <div id="viewManage" class="tab-content hidden">
+      <button class="btn btn-blue" style="width: 100%; padding: 10px; margin-bottom: 12px;" onclick="openHabitEditor(null, false)">+ Create Master Template Habit</button>
+      <div class="habit-list" id="manageHabitsContainer"></div>
+    </div>
+
+  </div>
+
+  <!-- Habit Editor Modal (With "This Day Only" Toggle) -->
+  <div id="habitModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="modalTitle" style="font-size: 15px;">Habit Editor</h3>
+      <input type="text" id="habitNameInput" class="habit-input" placeholder="Habit Name (e.g. Read 15 Pages)">
+      <input type="text" id="habitIconInput" class="habit-input" placeholder="Icon (e.g. 💧, ⚡, 📖)" value="🎯">
+      <select id="habitTypeSelect" class="habit-input" onchange="toggleOptionField()">
+        <option value="checkbox">Checkbox (Yes/No)</option>
+        <option value="multiselect">Multi-Select (Tags / Categories)</option>
+        <option value="text">Text Input (Metric / Notes)</option>
+      </select>
+      <div id="multiOptionsGroup" class="hidden">
+        <input type="text" id="habitOptionsInput" class="habit-input" placeholder="Comma-separated: Blueberry, Walnut, Chia Seeds">
+      </div>
+      <div style="background: #0D1117; padding: 10px; border-radius: 8px; border: 1px solid #30363D;">
+        <label style="font-size: 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="modalThisDayOnlyCheckbox" class="habit-check">
+          <span id="modalThisDayOnlyLabel">Apply to this day only</span>
+        </label>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button class="btn" style="flex: 1;" onclick="closeHabitEditor()">Cancel</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="saveHabitDefinition()">Save Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backup & Pendrive Sync Modal -->
+  <div id="backupModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 style="font-size: 15px;">💾 Pendrive / Device Backup</h3>
+      <p style="font-size: 11px; color: #8B949E;">Export your complete database to your flash drive to sync between phone and laptop.</p>
+      <button class="btn btn-blue" style="padding: 10px;" onclick="exportDataJson()">📤 Export Backup to Pendrive (.json)</button>
+      <hr style="border: 0; border-top: 1px solid #30363D;">
+      <label style="font-size: 12px; font-weight: bold;">Import Backup from Pendrive:</label>
+      <input type="file" id="importFileInput" accept=".json" class="habit-input" onchange="importDataJson(event)">
+      <button class="btn" style="margin-top: 8px;" onclick="closeBackupModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "notion_habit_vault_master_data";
+    let activeDateStr = getFormattedDate(new Date());
+    let editingHabitId = null;
+
+    const DEFAULT_STORE = {
+      habits: [
+        { id: "h_water", title: "Drink 2.5L Water", icon: "💧", type: "checkbox" },
+        { id: "h_workout", title: "30-Min Workout / Cardio", icon: "⚡", type: "checkbox" },
+        { id: "h_berries", title: "Berries & Nuts Ate", icon: "🫐", type: "multiselect", options: ["Blueberry", "Blackberry", "Raspberry", "Walnut", "Chia Seeds", "Almonds"] },
+        { id: "h_reading", title: "Read 15 Pages", icon: "📖", type: "text" }
+      ],
+      entries: {}
+    };
+
+    function loadData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        saveData(DEFAULT_STORE);
+        return DEFAULT_STORE;
+      }
+      try { return JSON.parse(raw); } catch (e) { return DEFAULT_STORE; }
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function getFormattedDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getActiveHabitsForDate(data, dateKey) {
+      const ent = (data.entries && data.entries[dateKey]) || {};
+      if (ent.dayHabits && Array.isArray(ent.dayHabits) && ent.dayHabits.length > 0) {
+        return ent.dayHabits;
+      }
+      return data.habits || [];
+    }
+
+    function ensureEntry(data, dateKey) {
+      data.entries = data.entries || {};
+      data.entries[dateKey] = data.entries[dateKey] || { checkboxes: {}, multiselects: {}, textValues: {}, reflection: "" };
+      return data.entries[dateKey];
+    }
+
+    function setTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+
+      if (tab === "daily") {
+        document.getElementById("tabBtnDaily").classList.add("active");
+        document.getElementById("viewDaily").classList.remove("hidden");
+        renderDaily();
+      } else if (tab === "streaks") {
+        document.getElementById("tabBtnStreaks").classList.add("active");
+        document.getElementById("viewStreaks").classList.remove("hidden");
+        renderMatrix();
+      } else {
+        document.getElementById("tabBtnManage").classList.add("active");
+        document.getElementById("viewManage").classList.remove("hidden");
+        renderManage();
+      }
+    }
+
+    // Opens a date directly when clicked anywhere in the history matrix
+    function jumpToDate(dateKey) {
+      activeDateStr = dateKey;
+      setTab('daily');
+    }
+
+    function onDateChanged(val) {
+      if (val) {
+        activeDateStr = val;
+        renderDaily();
+      }
+    }
+
+    function shiftDate(offset) {
+      const cur = new Date(activeDateStr + "T00:00:00");
+      cur.setDate(cur.getDate() + offset);
+      activeDateStr = getFormattedDate(cur);
+      renderDaily();
+    }
+
+    function renderDaily() {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      const habits = getActiveHabitsForDate(data, activeDateStr);
+
+      const datePicker = document.getElementById("datePickerInput");
+      datePicker.value = activeDateStr;
+
+      const curDateObj = new Date(activeDateStr + "T00:00:00");
+      const dayName = curDateObj.toLocaleDateString("en-US", { weekday: "long" });
+      document.getElementById("dayOfWeekLabel").innerText = `(${dayName})`;
+
+      document.getElementById("habitContextLabel").innerText = entry.dayHabits
+        ? `Habits (Customized for ${activeDateStr})`
+        : `Habits (Default Master Template)`;
+
+      // Set reflection
+      document.getElementById("reflectionInput").value = entry.reflection || "";
+
+      const container = document.getElementById("dailyHabitsContainer");
+      container.innerHTML = "";
+
+      let completed = 0;
+
+      habits.forEach(h => {
+        const item = document.createElement("div");
+        item.className = "habit-item";
+
+        if (h.type === "checkbox") {
+          const checked = Boolean(entry.checkboxes && entry.checkboxes[h.id]);
+          if (checked) completed++;
+          item.innerHTML = `
+            <div class="habit-row">
+              <input type="checkbox" class="habit-check" ${checked ? "checked" : ""} onchange="onToggleCheck('${h.id}', this.checked)">
+              <span class="habit-name ${checked ? 'done' : ''}">${h.icon} ${h.title}</span>
+              <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="openHabitEditor('${h.id}', true)">Edit</button>
+            </div>
+          `;
+        } else if (h.type === "multiselect") {
+          const selected = (entry.multiselects && entry.multiselects[h.id]) || [];
+          if (selected.length > 0) completed++;
+          const tags = (h.options || []).map(opt => {
+            const act = selected.includes(opt) ? "active" : "";
+            return `<div class="tag ${act}" onclick="onToggleTag('${h.id}', '${opt}')">${opt}</div>`;
+          }).join("");
+          item.innerHTML = `
+            <div class="habit-row">
+              <span class="habit-name">${h.icon} ${h.title}</span>
+              <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="openHabitEditor('${h.id}', true)">Edit</button>
+            </div>
+            <div class="tags">${tags}</div>
+          `;
+        } else if (h.type === "text") {
+          const txt = (entry.textValues && entry.textValues[h.id]) || "";
+          if (txt.trim()) completed++;
+          item.innerHTML = `
+            <div class="habit-row">
+              <span class="habit-name">${h.icon} ${h.title}</span>
+              <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="openHabitEditor('${h.id}', true)">Edit</button>
+            </div>
+            <input type="text" class="habit-input" value="${txt}" placeholder="Notes, sets, or metrics..." onchange="onUpdateText('${h.id}', this.value)">
+          `;
+        }
+
+        container.appendChild(item);
+      });
+
+      const score = habits.length ? Math.round((completed / habits.length) * 100) : 0;
+      document.getElementById("scoreText").innerText = `${score}%`;
+      document.getElementById("progressFill").style.width = `${score}%`;
+    }
+
+    function onToggleCheck(id, val) {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      entry.checkboxes[id] = val;
+      saveData(data);
+      renderDaily();
+    }
+
+    function onToggleTag(id, opt) {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      entry.multiselects[id] = entry.multiselects[id] || [];
+      const idx = entry.multiselects[id].indexOf(opt);
+      if (idx > -1) entry.multiselects[id].splice(idx, 1);
+      else entry.multiselects[id].push(opt);
+      saveData(data);
+      renderDaily();
+    }
+
+    function onUpdateText(id, val) {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      entry.textValues[id] = val;
+      saveData(data);
+      renderDaily();
+    }
+
+    function onUpdateReflection(val) {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      entry.reflection = val;
+      saveData(data);
+    }
+
+    /* Full Matrix & History with Clickable Date Rows */
+    function renderMatrix() {
+      const data = loadData();
+      const masterHabits = data.habits || [];
+      const entries = data.entries || {};
+
+      // 1. Calculate Active Streak
+      let streak = 0;
+      const today = new Date();
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const k = getFormattedDate(d);
+        const ent = entries[k];
+        if (!ent) {
+          if (i === 0) continue;
+          break;
+        }
+        const habits = getActiveHabitsForDate(data, k);
+        let done = 0;
+        habits.forEach(h => {
+          if (h.type === "checkbox" && ent.checkboxes && ent.checkboxes[h.id]) done++;
+          if (h.type === "multiselect" && ent.multiselects && ent.multiselects[h.id] && ent.multiselects[h.id].length) done++;
+          if (h.type === "text" && ent.textValues && ent.textValues[h.id] && ent.textValues[h.id].trim()) done++;
+        });
+        if (done > 0) streak++;
+        else if (i > 0) break;
+      }
+      document.getElementById("streakDays").innerText = `${streak} Days`;
+
+      // 2. Build Interactive Matrix Header
+      const headerRow = document.getElementById("matrixHeader");
+      headerRow.innerHTML = `<th>Date Page (Click to Open)</th><th>Score</th>` +
+        masterHabits.map(h => `<th>${h.icon} ${h.title}</th>`).join("");
+
+      // 3. Collect Past 30 Days and Custom Dates
+      const dateSet = new Set(Object.keys(entries));
+      for (let i = 0; i < 21; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dateSet.add(getFormattedDate(d));
+      }
+      const sortedDates = Array.from(dateSet).sort().reverse();
+
+      const tbody = document.getElementById("matrixBody");
+      tbody.innerHTML = "";
+
+      sortedDates.forEach(dateKey => {
+        const ent = entries[dateKey] || { checkboxes: {}, multiselects: {}, textValues: {} };
+        const habits = getActiveHabitsForDate(data, dateKey);
+
+        let done = 0;
+        habits.forEach(h => {
+          if (h.type === "checkbox" && ent.checkboxes && ent.checkboxes[h.id]) done++;
+          if (h.type === "multiselect" && ent.multiselects && ent.multiselects[h.id] && ent.multiselects[h.id].length) done++;
+          if (h.type === "text" && ent.textValues && ent.textValues[h.id] && ent.textValues[h.id].trim()) done++;
+        });
+        const sc = habits.length ? Math.round((done / habits.length) * 100) : 0;
+
+        const cells = masterHabits.map(h => {
+          if (h.type === "checkbox") {
+            return `<td>${ent.checkboxes && ent.checkboxes[h.id] ? '✅' : '⚪'}</td>`;
+          } else if (h.type === "multiselect") {
+            const arr = (ent.multiselects && ent.multiselects[h.id]) || [];
+            return `<td style="color:#8B949E;">${arr.length ? arr.join(', ') : '-'}</td>`;
+          } else {
+            const txt = (ent.textValues && ent.textValues[h.id]) || '-';
+            return `<td style="color:#8B949E; max-width:120px; overflow:hidden; text-overflow:ellipsis;">${txt}</td>`;
+          }
+        }).join("");
+
+        tbody.innerHTML += `
+          <tr class="clickable-row" onclick="jumpToDate('${dateKey}')">
+            <td style="color: #58A6FF; font-weight: bold; font-family: monospace;">📅 ${dateKey}</td>
+            <td style="font-weight: 800;">${sc}%</td>
+            ${cells}
+          </tr>
+        `;
+      });
+    }
+
+    function renderManage() {
+      const data = loadData();
+      const container = document.getElementById("manageHabitsContainer");
+      container.innerHTML = "";
+
+      (data.habits || []).forEach(h => {
+        const item = document.createElement("div");
+        item.className = "habit-item";
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${h.icon} ${h.title}</strong>
+              <div style="font-size: 11px; color: #8B949E; text-transform: capitalize;">Type: ${h.type}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn" onclick="openHabitEditor('${h.id}', false)">Edit</button>
+              <button class="btn btn-danger" onclick="deleteHabit('${h.id}', false)">Delete</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function openHabitEditor(id = null, isThisDayOnly = false) {
+      editingHabitId = id;
+      const data = loadData();
+      const modal = document.getElementById("habitModal");
+      const titleInput = document.getElementById("habitNameInput");
+      const iconInput = document.getElementById("habitIconInput");
+      const typeSelect = document.getElementById("habitTypeSelect");
+      const optionsInput = document.getElementById("habitOptionsInput");
+      const dayOnlyBox = document.getElementById("modalThisDayOnlyCheckbox");
+      const dayOnlyLabel = document.getElementById("modalThisDayOnlyLabel");
+
+      dayOnlyBox.checked = isThisDayOnly;
+      dayOnlyLabel.innerText = `Apply to this day only (${activeDateStr})`;
+
+      const habitsList = isThisDayOnly ? getActiveHabitsForDate(data, activeDateStr) : (data.habits || []);
+
+      if (id) {
+        const h = habitsList.find(x => x.id === id);
+        document.getElementById("modalTitle").innerText = "Edit Habit";
+        if (h) {
+          titleInput.value = h.title;
+          iconInput.value = h.icon;
+          typeSelect.value = h.type;
+          optionsInput.value = (h.options || []).join(", ");
+        }
+      } else {
+        document.getElementById("modalTitle").innerText = isThisDayOnly ? "Add Habit (Today Only)" : "Create Master Habit";
+        titleInput.value = "";
+        iconInput.value = "🎯";
+        typeSelect.value = "checkbox";
+        optionsInput.value = "";
+      }
+      toggleOptionField();
+      modal.classList.remove("hidden");
+    }
+
+    function toggleOptionField() {
+      const type = document.getElementById("habitTypeSelect").value;
+      const grp = document.getElementById("multiOptionsGroup");
+      if (type === "multiselect") grp.classList.remove("hidden");
+      else grp.classList.add("hidden");
+    }
+
+    function closeHabitEditor() {
+      document.getElementById("habitModal").classList.add("hidden");
+      editingHabitId = null;
+    }
+
+    function saveHabitDefinition() {
+      const title = document.getElementById("habitNameInput").value.trim();
+      const icon = document.getElementById("habitIconInput").value.trim() || "🎯";
+      const type = document.getElementById("habitTypeSelect").value;
+      const opts = document.getElementById("habitOptionsInput").value.split(",").map(s => s.trim()).filter(Boolean);
+      const isDayOnly = document.getElementById("modalThisDayOnlyCheckbox").checked;
+
+      if (!title) return alert("Please enter a habit title");
+
+      const data = loadData();
+
+      if (isDayOnly) {
+        const entry = ensureEntry(data, activeDateStr);
+        let list = entry.dayHabits ? [...entry.dayHabits] : [...(data.habits || [])];
+        if (editingHabitId) {
+          const idx = list.findIndex(x => x.id === editingHabitId);
+          if (idx > -1) list[idx] = { id: editingHabitId, title, icon, type, options: opts };
+        } else {
+          list.push({ id: "h_" + Date.now(), title, icon, type, options: opts });
+        }
+        entry.dayHabits = list;
+      } else {
+        if (editingHabitId) {
+          const h = data.habits.find(x => x.id === editingHabitId);
+          if (h) {
+            h.title = title;
+            h.icon = icon;
+            h.type = type;
+            if (type === "multiselect") h.options = opts;
+          }
+        } else {
+          data.habits.push({ id: "h_" + Date.now(), title, icon, type, options: type === "multiselect" ? opts : [] });
+        }
+      }
+
+      saveData(data);
+      closeHabitEditor();
+      renderDaily();
+      renderManage();
+    }
+
+    function deleteHabit(id, isDayOnly) {
+      if (!confirm("Are you sure you want to delete this habit?")) return;
+      const data = loadData();
+      if (isDayOnly) {
+        const entry = ensureEntry(data, activeDateStr);
+        entry.dayHabits = getActiveHabitsForDate(data, activeDateStr).filter(h => h.id !== id);
+      } else {
+        data.habits = (data.habits || []).filter(h => h.id !== id);
+      }
+      saveData(data);
+      renderDaily();
+      renderManage();
+    }
+
+    /* Native Obsidian Markdown Export with Frontmatter & Reflections */
+/* Native Obsidian Markdown Export - Filtered (Completed Only) */
+    function exportObsidianNote() {
+      const data = loadData();
+      const entry = ensureEntry(data, activeDateStr);
+      const habits = getActiveHabitsForDate(data, activeDateStr);
+      const curDateObj = new Date(activeDateStr + "T00:00:00");
+      const dayName = curDateObj.toLocaleDateString("en-US", { weekday: "long" });
+
+      let completedListMd = "";
+      let done = 0;
+
+      habits.forEach(h => {
+        if (h.type === "checkbox") {
+          const checked = Boolean(entry.checkboxes && entry.checkboxes[h.id]);
+          if (checked) {
+            done++;
+            completedListMd += `- [x] ${h.title}\n`;
+          }
+        } else if (h.type === "multiselect") {
+          const sel = (entry.multiselects && entry.multiselects[h.id]) || [];
+          if (sel.length > 0) {
+            done++;
+            completedListMd += `- [x] ${h.title}:\n`;
+            sel.forEach(item => {
+              completedListMd += `  - ${item}\n`;
+            });
+          }
+        } else if (h.type === "text") {
+          const val = (entry.textValues && entry.textValues[h.id]) || "";
+          if (val.trim()) {
+            done++;
+            completedListMd += `- [x] ${h.title}: ${val.trim()}\n`;
+          }
+        }
+      });
+
+      const score = habits.length ? Math.round((done / habits.length) * 100) : 0;
+
+      let md = `---\n`;
+      md += `date: ${activeDateStr}\n`;
+      md += `day: ${dayName}\n`;
+      md += `score: ${score}%\n`;
+      md += `completed: ${done}/${habits.length}\n`;
+      md += `tags:\n  - habit-tracker\n  - daily-log\n`;
+      md += `---\n\n`;
+      md += `# @${activeDateStr}-${dayName}\n\n`;
+      md += `## Completed Habits\n\n`;
+
+      if (completedListMd) {
+        md += completedListMd;
+      } else {
+        md += `*No habits logged for this date.*\n`;
+      }
+
+      if (entry.reflection && entry.reflection.trim()) {
+        md += `\n## Daily Reflection\n\n${entry.reflection.trim()}\n`;
+      }
+
+      downloadFile(`${activeDateStr}.md`, md, "text/markdown");
+    }
+
+    function openBackupModal() { document.getElementById("backupModal").classList.remove("hidden"); }
+    function closeBackupModal() { document.getElementById("backupModal").classList.add("hidden"); }
+
+    function exportDataJson() {
+      const data = loadData();
+      downloadFile("habits_backup.json", JSON.stringify(data, null, 2), "application/json");
+    }
+
+    function importDataJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const json = JSON.parse(e.target.result);
+          if (json.habits) {
+            saveData(json);
+            alert("Database imported successfully!");
+            closeBackupModal();
+            renderDaily();
+          } else {
+            alert("Invalid backup JSON format.");
+          }
+        } catch (err) {
+          alert("Error parsing backup JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // Initialize to today's date
+    renderDaily();
+  </script>
+</body>
+</html>
